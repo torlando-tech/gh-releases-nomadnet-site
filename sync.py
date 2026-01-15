@@ -161,12 +161,25 @@ def update_latest_symlink(app_name: str, stable_filename: str):
 
 def install_files(config: dict):
     """Install pages and assets to NomadNet directories."""
+    import shutil
+
+    # Copy pages from pages/ directory
+    pages_src = SCRIPT_DIR / "pages"
+    if pages_src.exists():
+        for page_file in pages_src.iterdir():
+            if page_file.is_file():
+                dst = PAGES_DIR / page_file.name
+                shutil.copy(page_file, dst)
+                # Make .mu files executable
+                if page_file.suffix == ".mu":
+                    dst.chmod(0o755)
+                log(f"Installed {page_file.name}")
+
     # Copy ASCII art if configured
     if config.get("ascii_art_file"):
         src = SCRIPT_DIR / config["ascii_art_file"]
         dst = PAGES_DIR / "ascii-art.txt"
         if src.exists():
-            import shutil
             shutil.copy(src, dst)
             log(f"Installed ASCII art to {dst}")
 
