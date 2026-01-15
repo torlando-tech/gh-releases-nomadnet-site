@@ -234,7 +234,8 @@ def main():
             "app_name": app_name,
             "app_description": config.get("app_description", ""),
             "page_title": config.get("page_title", f"{app_name} Downloads"),
-            "ascii_art_file": "ascii-art.txt" if config.get("ascii_art_file") else None
+            "ascii_art_file": "ascii-art.txt" if config.get("ascii_art_file") else None,
+            "ascii_bg_color": config.get("ascii_bg_color")
         },
         "last_sync": datetime.now(timezone.utc).isoformat(),
         "latest_stable": None,

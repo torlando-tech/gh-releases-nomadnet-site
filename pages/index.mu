@@ -32,6 +32,7 @@ app_name = config.get("app_name", "App")
 app_description = config.get("app_description", "")
 page_title = config.get("page_title", f"{app_name} Downloads")
 ascii_art_file = config.get("ascii_art_file")
+ascii_bg_color = config.get("ascii_bg_color")  # e.g. "b6d" for light purple
 
 # Title
 print(f">{page_title}")
@@ -44,11 +45,20 @@ if ascii_art_file:
     if os.path.exists(ascii_path):
         with open(ascii_path) as f:
             lines = f.read().splitlines()
+            # Strip empty lines from top and bottom
             while lines and not lines[0].strip():
                 lines.pop(0)
             while lines and not lines[-1].strip():
                 lines.pop()
-            print('\n'.join(lines))
+            # Find max width and pad all lines to make a square
+            max_width = max(len(line) for line in lines) if lines else 0
+            padded_lines = [line.ljust(max_width) for line in lines]
+            # Apply background color if configured
+            if ascii_bg_color:
+                print(f"`B{ascii_bg_color}")
+            print('\n'.join(padded_lines))
+            if ascii_bg_color:
+                print("`b")
         print("")
 
 print(f"`!{app_name}`!")
