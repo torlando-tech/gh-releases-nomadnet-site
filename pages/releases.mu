@@ -81,12 +81,15 @@ else:
                 print(f"`!{name}`! - {date_str}")
                 print(f"  `F0af`[Download ({size_str})`:/file/{release['asset_filename']}]`f")
 
-                if release.get('body_summary'):
-                    lines = release['body_summary'].split('\n')[:2]
-                    for line in lines:
-                        if line.strip():
-                            truncated = line[:60] + "..." if len(line) > 60 else line
-                            print(f"  `F888{truncated}`f")
+                if release.get('checksum'):
+                    print(f"  `F666SHA256: {release['checksum']}`f")
+
+                if release.get('body'):
+                    print("")
+                    for line in release['body'].split('\n'):
+                        print(line)
+                print("")
+                print("-")
                 print("")
 
         # Pre-releases
@@ -103,6 +106,16 @@ else:
 
                 print(f"`*{name}`* - {date_str}")
                 print(f"  `Ff80`[Download ({size_str})`:/file/{release['asset_filename']}]`f")
+
+                if release.get('checksum'):
+                    print(f"  `F666SHA256: {release['checksum']}`f")
+
+                if release.get('body'):
+                    print("")
+                    for line in release['body'].split('\n'):
+                        print(line)
+                print("")
+                print("-")
                 print("")
 
 print("-")

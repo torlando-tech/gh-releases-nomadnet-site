@@ -145,19 +145,6 @@ def extract_checksum_from_body(body: str, filename: str):
     return None
 
 
-def summarize_body(body: str, max_lines: int = 10) -> str:
-    """Create a summary of the release body."""
-    lines = body.strip().split('\n')
-    content_lines = []
-    for line in lines:
-        if line.startswith('#') or line.startswith('```') or not line.strip():
-            continue
-        content_lines.append(line.strip())
-        if len(content_lines) >= max_lines:
-            break
-    return '\n'.join(content_lines)
-
-
 def update_latest_symlink(app_name: str, stable_filename: str):
     """Update the latest symlink."""
     symlink_name = f"{app_name.lower()}-latest{Path(stable_filename).suffix}"
@@ -290,9 +277,10 @@ def main():
                 "name": details["name"],
                 "is_prerelease": details["isPrerelease"],
                 "published_at": details["publishedAt"],
-                "body_summary": summarize_body(details["body"]),
+                "body": details["body"],
                 "asset_filename": asset["name"],
-                "asset_size": asset["size"]
+                "asset_size": asset["size"],
+                "checksum": extract_checksum_from_body(details["body"], asset["name"])
             })
 
     # Write JSON data

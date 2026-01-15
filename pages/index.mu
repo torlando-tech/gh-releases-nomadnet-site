@@ -74,22 +74,6 @@ def format_date(iso_date: str) -> str:
         return iso_date[:10] if iso_date else "Unknown"
 
 
-def extract_highlights(body: str, max_items: int = 5) -> list:
-    """Extract key feature highlights from release body."""
-    highlights = []
-    for line in body.split('\n'):
-        line = line.strip()
-        if line.startswith('* feat:') or line.startswith('* fix:'):
-            feat = line.replace('* feat:', '').replace('* fix:', '').strip()
-            feat = feat.split(' by @')[0].strip()
-            if len(feat) > 55:
-                feat = feat[:52] + "..."
-            highlights.append(feat)
-            if len(highlights) >= max_items:
-                break
-    return highlights
-
-
 if data is None:
     print("-")
     print("")
@@ -112,14 +96,15 @@ else:
         print("")
 
         if stable.get('checksum'):
-            print(f"`F666SHA256: {stable['checksum'][:32]}...`f")
+            print(f"`F666SHA256: {stable['checksum']}`f")
             print("")
 
-        highlights = extract_highlights(stable.get('body', ''))
-        if highlights:
-            print("`!Highlights:`!")
-            for h in highlights[:4]:
-                print(f"  {h}")
+        body = stable.get('body', '')
+        if body:
+            print("`!Release Notes:`!")
+            print("")
+            for line in body.split('\n'):
+                print(line)
             print("")
     else:
         print("No stable release available.")
@@ -140,11 +125,12 @@ else:
         print(f"`Ff80`[Download Beta ({size_str})`:/file/{prerelease['asset_filename']}]`f")
         print("")
 
-        highlights = extract_highlights(prerelease.get('body', ''))
-        if highlights:
-            print("`!Highlights:`!")
-            for h in highlights[:3]:
-                print(f"  {h}")
+        body = prerelease.get('body', '')
+        if body:
+            print("`!Release Notes:`!")
+            print("")
+            for line in body.split('\n'):
+                print(line)
             print("")
 
     # Navigation
