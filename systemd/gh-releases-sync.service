@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync GitHub releases for NomadNet
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Update this path to where you cloned the repo
+ExecStart=/usr/bin/python3 %h/repos/gh-releases-nomadnet-site/sync.py
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

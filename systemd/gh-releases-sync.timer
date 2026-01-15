@@ -1,0 +1,18 @@
+[Unit]
+Description=Run GitHub releases sync periodically
+
+[Timer]
+# Run 15 minutes after boot
+OnBootSec=15min
+
+# Run every 6 hours (adjust as needed)
+OnUnitActiveSec=6h
+
+# Add randomness to avoid thundering herd
+RandomizedDelaySec=10min
+
+# Persist timer across reboots
+Persistent=true
+
+[Install]
+WantedBy=timers.target

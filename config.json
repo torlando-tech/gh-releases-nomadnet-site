@@ -1,0 +1,10 @@
+{
+  "app_name": "Columba",
+  "app_description": "A messaging application for the Reticulum Network Stack.",
+  "github_repo": "torlando-tech/columba",
+  "asset_pattern": "*.apk",
+  "max_releases": 10,
+  "sync_interval_hours": 6,
+  "ascii_art_file": "ascii-art.txt",
+  "page_title": "Columba Downloads"
+}
