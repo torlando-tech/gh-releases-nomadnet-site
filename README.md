@@ -78,17 +78,6 @@ View sync logs:
 journalctl --user -u gh-releases-sync.service
 ```
 
-## Kubernetes Deployment
-
-This repo can be deployed to Kubernetes using a git-sync sidecar that pulls updates automatically.
-
-The sync runs every 6 hours. To trigger an immediate sync after pushing changes:
-```bash
-kubectl exec -n yggdrasil deploy/reticulum-node -c gh-releases-sync -- python3 /git/current/sync.py
-```
-
-Git-sync pulls the repo every 5 minutes, so changes are available shortly after pushing.
-
 ## File Structure
 
 ```
