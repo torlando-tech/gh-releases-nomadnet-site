@@ -1,6 +1,6 @@
 {
   "app_name": "Columba",
-  "app_description": "A messaging application for the Reticulum Network Stack.",
+  "app_description": "A native android messaging application for the Reticulum Network Stack. Features a BLE interface",
   "github_repo": "torlando-tech/columba",
   "asset_pattern": "*.apk",
   "max_releases": 10,
