@@ -52,13 +52,13 @@ if ascii_art_file:
                 lines.pop()
             # Find max width and pad all lines to make a square
             max_width = max(len(line) for line in lines) if lines else 0
-            padded_lines = [line.ljust(max_width) for line in lines]
-            # Apply background color if configured
-            if ascii_bg_color:
-                print(f"`B{ascii_bg_color}")
-            print('\n'.join(padded_lines))
-            if ascii_bg_color:
-                print("`b")
+            # Print each line with background color (reset at end of each line for square effect)
+            for line in lines:
+                padded = line.ljust(max_width)
+                if ascii_bg_color:
+                    print(f"`B{ascii_bg_color}{padded}`b")
+                else:
+                    print(padded)
         print("")
 
 print(f"`!{app_name}`!")
