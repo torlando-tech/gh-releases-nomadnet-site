@@ -56,6 +56,19 @@ def format_date(iso_date: str) -> str:
         return iso_date[:10] if iso_date else "Unknown"
 
 
+def get_download_count(filename: str) -> int:
+    """Get download count for a file."""
+    counts_file = Path.home() / ".nomadnetwork" / "data" / "download_counts.json"
+    try:
+        if counts_file.exists():
+            with open(counts_file) as f:
+                counts_data = json.load(f)
+                return counts_data.get("counts", {}).get(filename, 0)
+    except Exception:
+        pass
+    return 0
+
+
 if data is None:
     print("`Ff00Error: Release data not available.`f")
 else:
@@ -79,7 +92,8 @@ else:
                 size_str = format_size(release['asset_size'])
 
                 print(f"`!{name}`! - {date_str}")
-                print(f"  `F0af`[Download ({size_str})`:/file/{release['asset_filename']}]`f")
+                dl_count = get_download_count(release['asset_filename'])
+                print(f"  `F0af`[Download ({size_str})`:/page/download.mu`file={release['asset_filename']}]`f  `F888({dl_count} views)`f")
 
                 if release.get('checksum'):
                     print(f"  `F666SHA256: {release['checksum']}`f")
@@ -105,7 +119,8 @@ else:
                 size_str = format_size(release['asset_size'])
 
                 print(f"`*{name}`* - {date_str}")
-                print(f"  `Ff80`[Download ({size_str})`:/file/{release['asset_filename']}]`f")
+                dl_count = get_download_count(release['asset_filename'])
+                print(f"  `Ff80`[Download ({size_str})`:/page/download.mu`file={release['asset_filename']}]`f  `F888({dl_count} views)`f")
 
                 if release.get('checksum'):
                     print(f"  `F666SHA256: {release['checksum']}`f")

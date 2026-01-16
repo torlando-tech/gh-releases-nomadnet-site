@@ -84,6 +84,19 @@ def format_date(iso_date: str) -> str:
         return iso_date[:10] if iso_date else "Unknown"
 
 
+def get_download_count(filename: str) -> int:
+    """Get download count for a file."""
+    counts_file = Path.home() / ".nomadnetwork" / "data" / "download_counts.json"
+    try:
+        if counts_file.exists():
+            with open(counts_file) as f:
+                counts_data = json.load(f)
+                return counts_data.get("counts", {}).get(filename, 0)
+    except Exception:
+        pass
+    return 0
+
+
 if data is None:
     print("-")
     print("")
@@ -102,7 +115,8 @@ else:
         print("")
 
         size_str = format_size(stable['asset_size'])
-        print(f"`F0af`[Download ({size_str})`:/file/{stable['asset_filename']}]`f")
+        dl_count = get_download_count(stable['asset_filename'])
+        print(f"`F0af`[Download ({size_str})`:/page/download.mu`file={stable['asset_filename']}]`f  `F888({dl_count} views)`f")
         print("")
 
         if stable.get('checksum'):
@@ -132,7 +146,8 @@ else:
         print("")
 
         size_str = format_size(prerelease['asset_size'])
-        print(f"`Ff80`[Download Beta ({size_str})`:/file/{prerelease['asset_filename']}]`f")
+        dl_count = get_download_count(prerelease['asset_filename'])
+        print(f"`Ff80`[Download Beta ({size_str})`:/page/download.mu`file={prerelease['asset_filename']}]`f  `F888({dl_count} views)`f")
         print("")
 
         body = prerelease.get('body', '')
