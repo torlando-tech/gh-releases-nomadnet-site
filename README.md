@@ -59,6 +59,7 @@ Edit `config.json` to customize:
 | `max_releases` | Number of releases to track | `10` |
 | `sync_interval_hours` | How often to sync | `6` |
 | `ascii_art_file` | ASCII art filename | `"ascii-art.txt"` |
+| `ascii_bg_color` | Background color for ASCII art (3-digit hex) | `"b6d"` (light purple) |
 | `page_title` | Page title | `"My Downloads"` |
 
 ## Manual Usage

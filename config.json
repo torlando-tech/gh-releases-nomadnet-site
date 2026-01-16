@@ -6,5 +6,6 @@
   "max_releases": 10,
   "sync_interval_hours": 6,
   "ascii_art_file": "ascii-art.txt",
+  "ascii_bg_color": "b6d",
   "page_title": "Columba Downloads"
 }
