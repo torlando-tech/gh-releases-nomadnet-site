@@ -2,7 +2,9 @@
 
 Host GitHub releases on your NomadNet node. Downloads release assets locally for offline distribution over Reticulum.
 
-<img width="1346" height="873" alt="image" src="https://github.com/user-attachments/assets/6087c322-9b1b-4815-89ad-89ba4d386a9f" />
+<img width="1346" height="873" alt="image" src="https://github.com/user-attachments/assets/6087c322-9b1b-4815-89ad-89ba4d386a9f" />\
+
+You can view a live version of this page at `8d1788fdb4e9f85303cfdf7481e721c7:/page/index.mu`
 
 ## Features
 
