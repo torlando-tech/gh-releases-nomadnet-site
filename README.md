@@ -2,6 +2,8 @@
 
 Host GitHub releases on your NomadNet node. Downloads release assets locally for offline distribution over Reticulum.
 
+<img width="1346" height="873" alt="image" src="https://github.com/user-attachments/assets/6087c322-9b1b-4815-89ad-89ba4d386a9f" />
+
 ## Features
 
 - Syncs releases from any GitHub repository
