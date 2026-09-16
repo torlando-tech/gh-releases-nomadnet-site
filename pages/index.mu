@@ -97,6 +97,51 @@ def get_download_count(filename: str) -> int:
     return 0
 
 
+def get_assets(release: dict) -> list:
+    """Asset list for a release; compatible with the old single-asset schema."""
+    assets = release.get("assets")
+    if assets:
+        return assets
+    if release.get("asset_filename"):
+        return [{
+            "filename": release["asset_filename"],
+            "size": release.get("asset_size", 0),
+            "checksum": release.get("checksum")
+        }]
+    return []
+
+
+def variant_labels(assets: list) -> dict:
+    """Short display label per asset: filename minus the prefix and suffix
+    shared by all assets of the release (e.g. 'official-rns-py-arm64-v8a')."""
+    names = [a["filename"] for a in assets]
+    labels = {}
+    if len(names) <= 1:
+        return {n: "" for n in names}
+    pref = names[0]
+    for n in names[1:]:
+        while pref and not n.startswith(pref):
+            pref = pref[:-1]
+    suff = names[0]
+    for n in names[1:]:
+        while suff and not n.endswith(suff):
+            suff = suff[1:]
+    for n in names:
+        if len(n) > len(pref) + len(suff):
+            mid = n[len(pref):len(n) - len(suff)]
+        else:
+            mid = ""
+        labels[n] = mid if mid else n
+    return labels
+
+
+def asset_link(filename: str, label: str, size: int, count: int, color: str, verb: str) -> None:
+    """Print a download link line for one asset."""
+    size_str = format_size(size)
+    text = f"{verb} {label} ({size_str})" if label else f"{verb} ({size_str})"
+    print(f"`F{color}`[{text}`:/page/download.mu`file={filename}]`f  `F888({count} views)`f")
+
+
 if data is None:
     print("-")
     print("")
@@ -114,14 +159,11 @@ else:
         print(f"`F888Released: {format_date(stable['published_at'])}`f")
         print("")
 
-        size_str = format_size(stable['asset_size'])
-        dl_count = get_download_count(stable['asset_filename'])
-        print(f"`F0af`[Download ({size_str})`:/page/download.mu`file={stable['asset_filename']}]`f  `F888({dl_count} views)`f")
+        labels = variant_labels(get_assets(stable))
+        for asset in get_assets(stable):
+            asset_link(asset["filename"], labels.get(asset["filename"], ""), asset["size"],
+                       get_download_count(asset["filename"]), "0af", "Download")
         print("")
-
-        if stable.get('checksum'):
-            print(f"`F666SHA256: {stable['checksum']}`f")
-            print("")
 
         body = stable.get('body', '')
         if body:
@@ -145,9 +187,10 @@ else:
         print(f"`F888Released: {format_date(prerelease['published_at'])}`f")
         print("")
 
-        size_str = format_size(prerelease['asset_size'])
-        dl_count = get_download_count(prerelease['asset_filename'])
-        print(f"`Ff80`[Download Beta ({size_str})`:/page/download.mu`file={prerelease['asset_filename']}]`f  `F888({dl_count} views)`f")
+        labels = variant_labels(get_assets(prerelease))
+        for asset in get_assets(prerelease):
+            asset_link(asset["filename"], labels.get(asset["filename"], ""), asset["size"],
+                       get_download_count(asset["filename"]), "f80", "Download Beta")
         print("")
 
         body = prerelease.get('body', '')

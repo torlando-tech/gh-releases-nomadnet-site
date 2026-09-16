@@ -3,13 +3,20 @@
 GitHub Release Sync Script for NomadNet
 Fetches releases from a GitHub repository and downloads assets for NomadNet hosting.
 
+Every asset matching the configured pattern is downloaded and listed per release,
+so releases with multiple build variants (architectures, features, etc.) all show up.
+
 Configuration is read from config.json in the same directory as this script,
 or from the path specified in the NOMADNET_RELEASES_CONFIG environment variable.
 """
 
+import fnmatch
 import json
+import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -86,17 +93,19 @@ def get_release_details(repo: str, tag: str):
     ])
 
 
-def find_matching_asset(assets: list, pattern: str):
-    """Find asset matching the pattern (supports *.ext format)."""
-    import fnmatch
+def find_matching_assets(assets: list, pattern: str) -> list:
+    """Find all assets matching the pattern (supports *.ext format)."""
+    matched = []
+    seen = set()
     for asset in assets:
         name = asset.get("name", "")
         # Skip checksum files
         if name.endswith(".sha256") or name.endswith(".md5"):
             continue
-        if fnmatch.fnmatch(name, pattern):
-            return asset
-    return None
+        if fnmatch.fnmatch(name, pattern) and name not in seen:
+            matched.append(asset)
+            seen.add(name)
+    return matched
 
 
 def download_asset(repo: str, tag: str, asset: dict) -> bool:
@@ -123,19 +132,56 @@ def download_asset(repo: str, tag: str, asset: dict) -> bool:
             text=True,
             timeout=600
         )
-        if result.returncode != 0:
-            log(f"Download failed: {result.stderr}")
-            return False
-        log(f"Successfully downloaded {filename}")
-        return True
     except subprocess.TimeoutExpired:
         log(f"Download timed out for {filename}")
         return False
 
+    if result.returncode != 0:
+        log(f"Download failed: {result.stderr}")
+        return False
+
+    if filepath.exists():
+        log(f"Successfully downloaded {filename}")
+        return True
+
+    log(f"Download reported success but file is missing: {filename}")
+    return False
+
+
+def fetch_checksum(repo: str, tag: str, asset_name: str, body: str):
+    """Get the SHA256 checksum for an asset.
+
+    Prefers the sibling '<name>.sha256' asset file (authoritative),
+    falls back to parsing the release body.
+    """
+    sha_name = asset_name + ".sha256"
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = subprocess.run(
+                [
+                    "gh", "release", "download", tag,
+                    "--repo", repo,
+                    "--pattern", sha_name,
+                    "--dir", tmp
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode == 0:
+                sha_file = Path(tmp) / sha_name
+                if sha_file.exists():
+                    match = re.search(r'[a-f0-9]{64}', sha_file.read_text(), re.IGNORECASE)
+                    if match:
+                        return match.group(0).lower()
+    except subprocess.TimeoutExpired:
+        log(f"Checksum fetch timed out for {sha_name}")
+
+    return extract_checksum_from_body(body, asset_name)
+
 
 def extract_checksum_from_body(body: str, filename: str):
-    """Extract checksum from release body."""
-    import re
+    """Extract checksum from release body (fallback when no .sha256 asset exists)."""
     # Look for SHA256 hash pattern followed by filename
     base_name = Path(filename).stem
     pattern = rf'([a-f0-9]{{64}})\s+.*{re.escape(base_name)}'
@@ -161,8 +207,6 @@ def update_latest_symlink(app_name: str, stable_filename: str):
 
 def install_files(config: dict):
     """Install pages and assets to NomadNet directories."""
-    import shutil
-
     # Copy pages from pages/ directory
     pages_src = SCRIPT_DIR / "pages"
     if pages_src.exists():
@@ -182,6 +226,48 @@ def install_files(config: dict):
         if src.exists():
             shutil.copy(src, dst)
             log(f"Installed ASCII art to {dst}")
+
+
+def process_release(repo: str, tag: str, asset_pattern: str) -> dict:
+    """Fetch a release, download all matching assets, and build its data entry.
+
+    Returns the release entry (with only assets that are actually present
+    locally), or None if the release has no matching downloadable assets.
+    """
+    details = get_release_details(repo, tag)
+    if not details:
+        return None
+
+    assets = find_matching_assets(details.get("assets", []), asset_pattern)
+    if not assets:
+        log(f"Release {tag} has no assets matching '{asset_pattern}'")
+        return None
+
+    body = details.get("body", "")
+    hosted = []
+    for asset in assets:
+        if not download_asset(repo, tag, asset):
+            continue
+        if not (FILES_DIR / asset["name"]).exists():
+            continue
+        hosted.append({
+            "filename": asset["name"],
+            "size": asset["size"],
+            "checksum": fetch_checksum(repo, tag, asset["name"], body)
+        })
+
+    if not hosted:
+        log(f"Release {tag}: no assets downloaded successfully")
+        return None
+
+    return {
+        "tag": details["tagName"],
+        "name": details["name"],
+        "is_prerelease": details["isPrerelease"],
+        "published_at": details["publishedAt"],
+        "body": body,
+        "assets": hosted
+    }
 
 
 def main():
@@ -243,59 +329,33 @@ def main():
         "all_releases": []
     }
 
+    # Cache processed releases by tag so each release is fetched once
+    entries = {}
+
+    def get_entry(tag: str) -> dict:
+        if tag not in entries:
+            entries[tag] = process_release(repo, tag, asset_pattern)
+        return entries[tag]
+
     # Process latest stable
     if latest_stable_tag:
-        details = get_release_details(repo, latest_stable_tag)
-        if details:
-            asset = find_matching_asset(details.get("assets", []), asset_pattern)
-            if asset and download_asset(repo, latest_stable_tag, asset):
-                data["latest_stable"] = {
-                    "tag": details["tagName"],
-                    "name": details["name"],
-                    "published_at": details["publishedAt"],
-                    "body": details["body"],
-                    "asset_filename": asset["name"],
-                    "asset_size": asset["size"],
-                    "checksum": extract_checksum_from_body(details["body"], asset["name"])
-                }
-                update_latest_symlink(app_name, asset["name"])
+        entry = get_entry(latest_stable_tag)
+        if entry:
+            data["latest_stable"] = entry
+            # Symlink points at the first matching asset (GitHub lists assets alphabetically)
+            update_latest_symlink(app_name, entry["assets"][0]["filename"])
 
     # Process latest pre-release
     if latest_prerelease_tag and latest_prerelease_tag != latest_stable_tag:
-        details = get_release_details(repo, latest_prerelease_tag)
-        if details:
-            asset = find_matching_asset(details.get("assets", []), asset_pattern)
-            if asset and download_asset(repo, latest_prerelease_tag, asset):
-                data["latest_prerelease"] = {
-                    "tag": details["tagName"],
-                    "name": details["name"],
-                    "published_at": details["publishedAt"],
-                    "body": details["body"],
-                    "asset_filename": asset["name"],
-                    "asset_size": asset["size"],
-                    "checksum": extract_checksum_from_body(details["body"], asset["name"])
-                }
+        entry = get_entry(latest_prerelease_tag)
+        if entry:
+            data["latest_prerelease"] = entry
 
     # Build all releases list
     for release in releases[:max_releases]:
-        details = get_release_details(repo, release["tagName"])
-        if not details:
-            continue
-
-        asset = find_matching_asset(details.get("assets", []), asset_pattern)
-        if asset:
-            download_asset(repo, release["tagName"], asset)
-
-            data["all_releases"].append({
-                "tag": details["tagName"],
-                "name": details["name"],
-                "is_prerelease": details["isPrerelease"],
-                "published_at": details["publishedAt"],
-                "body": details["body"],
-                "asset_filename": asset["name"],
-                "asset_size": asset["size"],
-                "checksum": extract_checksum_from_body(details["body"], asset["name"])
-            })
+        entry = get_entry(release["tagName"])
+        if entry:
+            data["all_releases"].append(entry)
 
     # Write JSON data
     releases_json = DATA_DIR / "releases.json"

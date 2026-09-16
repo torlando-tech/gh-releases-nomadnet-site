@@ -9,7 +9,8 @@ You can view a live version of this page at `8d1788fdb4e9f85303cfdf7481e721c7:/p
 ## Features
 
 - Syncs releases from any GitHub repository
-- Downloads assets (APKs, binaries, etc.) locally
+- Downloads all release assets (APKs, binaries, variants, etc.) locally
+- Each release variant is listed with its own download link and SHA256 checksum
 - Dynamic NomadNet pages showing latest stable and pre-release
 - Release history page with all versions
 - Automatic sync via systemd timer
@@ -59,7 +60,7 @@ Edit `config.json` to customize:
 | `app_name` | Display name for your app | `"Columba"` |
 | `app_description` | Short description | `"A messaging app..."` |
 | `github_repo` | GitHub repository | `"owner/repo"` |
-| `asset_pattern` | Glob pattern for assets | `"*.apk"`, `"*.deb"`, `"*linux*"` |
+| `asset_pattern` | Glob pattern for assets; every match is downloaded and listed per release | `"*.apk"`, `"*.deb"`, `"*linux*"` |
 | `max_releases` | Number of releases to track | `10` |
 | `sync_interval_hours` | How often to sync | `6` |
 | `ascii_art_file` | ASCII art filename | `"ascii-art.txt"` |
@@ -93,7 +94,8 @@ gh-releases-nomadnet-site/
 ├── ascii-art.txt        # Optional ASCII art
 ├── pages/
 │   ├── index.mu         # Home page (latest releases)
-│   └── releases.mu      # All releases page
+│   ├── releases.mu      # All releases page
+│   └── download.mu      # Download proxy (view count, checksum, file link)
 └── systemd/
     ├── gh-releases-sync.service
     └── gh-releases-sync.timer

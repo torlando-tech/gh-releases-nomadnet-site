@@ -34,11 +34,23 @@ app_name = config.get("app_name", "App")
 
 # Find release info for this file
 release_info = None
+asset_info = None
 if release_data and filename:
-    all_releases = release_data.get("all_releases", [])
-    for release in all_releases:
-        if release.get("asset_filename") == filename:
+    for release in release_data.get("all_releases", []):
+        assets = release.get("assets")
+        if assets:
+            matches = [a for a in assets if a.get("filename") == filename]
+        elif release.get("asset_filename") == filename:
+            matches = [{
+                "filename": release["asset_filename"],
+                "size": release.get("asset_size", 0),
+                "checksum": release.get("checksum")
+            }]
+        else:
+            matches = []
+        if matches:
             release_info = release
+            asset_info = matches[0]
             break
 
 
@@ -97,8 +109,8 @@ else:
         # Show release info
         name = release_info.get("name", filename)
         is_prerelease = release_info.get("is_prerelease", False)
-        size = release_info.get("asset_size", 0)
-        checksum = release_info.get("checksum", "")
+        size = asset_info.get("size", 0)
+        checksum = asset_info.get("checksum", "")
 
         if is_prerelease:
             print(f"`*{name}`* (Pre-release)")
