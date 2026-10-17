@@ -20,6 +20,8 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+from md2micron import convert_release_notes
+
 # Determine config file location
 SCRIPT_DIR = Path(__file__).parent.resolve()
 CONFIG_FILE = Path(__import__('os').environ.get(
@@ -266,6 +268,7 @@ def process_release(repo: str, tag: str, asset_pattern: str) -> dict:
         "is_prerelease": details["isPrerelease"],
         "published_at": details["publishedAt"],
         "body": body,
+        "body_micron": convert_release_notes(body),
         "assets": hosted
     }
 

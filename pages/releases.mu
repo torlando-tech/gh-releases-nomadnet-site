@@ -138,9 +138,10 @@ else:
                     asset_link(asset["filename"], labels.get(asset["filename"], ""), asset["size"],
                                get_download_count(asset["filename"]), "0af", "Download")
 
-                if release.get('body'):
+                notes = release.get('body_micron') or release.get('body', '')
+                if notes:
                     print("")
-                    for line in release['body'].split('\n'):
+                    for line in notes.split('\n'):
                         print(line)
                 print("")
                 print("-")
@@ -163,9 +164,10 @@ else:
                     asset_link(asset["filename"], labels.get(asset["filename"], ""), asset["size"],
                                get_download_count(asset["filename"]), "f80", "Download")
 
-                if release.get('body'):
+                notes = release.get('body_micron') or release.get('body', '')
+                if notes:
                     print("")
-                    for line in release['body'].split('\n'):
+                    for line in notes.split('\n'):
                         print(line)
                 print("")
                 print("-")

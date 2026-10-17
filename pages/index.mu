@@ -165,7 +165,7 @@ else:
                        get_download_count(asset["filename"]), "0af", "Download")
         print("")
 
-        body = stable.get('body', '')
+        body = stable.get('body_micron') or stable.get('body', '')
         if body:
             print("`!Release Notes:`!")
             print("")
@@ -193,7 +193,7 @@ else:
                        get_download_count(asset["filename"]), "f80", "Download Beta")
         print("")
 
-        body = prerelease.get('body', '')
+        body = prerelease.get('body_micron') or prerelease.get('body', '')
         if body:
             print("`!Release Notes:`!")
             print("")
