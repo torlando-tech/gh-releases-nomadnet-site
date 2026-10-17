@@ -74,15 +74,16 @@ def run_gh_command(args: list):
 
 
 def get_releases(repo: str, limit: int) -> list:
-    """Fetch all releases from GitHub."""
+    """Fetch published releases from GitHub (drafts are excluded)."""
     log(f"Fetching releases from {repo}")
     releases = run_gh_command([
         "release", "list",
         "--repo", repo,
-        "--json", "tagName,name,isPrerelease,publishedAt,isLatest",
+        "--json", "tagName,name,isPrerelease,publishedAt,isLatest,isDraft",
         "--limit", str(limit * 2)
     ])
-    return releases or []
+    # Draft releases are unpublished; never list or download them
+    return [r for r in (releases or []) if not r.get("isDraft")]
 
 
 def get_release_details(repo: str, tag: str):
@@ -91,7 +92,7 @@ def get_release_details(repo: str, tag: str):
     return run_gh_command([
         "release", "view", tag,
         "--repo", repo,
-        "--json", "tagName,name,body,isPrerelease,publishedAt,assets"
+        "--json", "tagName,name,body,isPrerelease,publishedAt,isDraft,assets"
     ])
 
 
@@ -230,7 +231,7 @@ def install_files(config: dict):
             log(f"Installed ASCII art to {dst}")
 
 
-def process_release(repo: str, tag: str, asset_pattern: str) -> dict:
+def process_release(repo: str, tag: str, asset_pattern: str) -> dict | None:
     """Fetch a release, download all matching assets, and build its data entry.
 
     Returns the release entry (with only assets that are actually present
@@ -238,6 +239,10 @@ def process_release(repo: str, tag: str, asset_pattern: str) -> dict:
     """
     details = get_release_details(repo, tag)
     if not details:
+        return None
+
+    if details.get("isDraft"):
+        log(f"Release {tag} is a draft, skipping")
         return None
 
     assets = find_matching_assets(details.get("assets", []), asset_pattern)
